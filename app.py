@@ -4,6 +4,15 @@ from fpdf import FPDF
 import io
 import textwrap
 
+class PDF(FPDF):
+    def header(self):
+        pass
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+        
 def sanitize_text(text):
     """Replace unsupported characters with safe alternatives."""
     replacements = {

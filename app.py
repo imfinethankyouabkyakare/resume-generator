@@ -4,21 +4,53 @@ from fpdf import FPDF
 import io
 import textwrap
 
-from fpdf import FPDF
+def sanitize_text(text):
+    """Replace unsupported characters with safe alternatives."""
+    replacements = {
+        '\u2013': '-',  # En-dash
+        '\u2014': '-',  # Em-dash
+        '\u2026': '...',  # Ellipsis
+        '\u2018': "'",  # Left single quote
+        '\u2019': "'",  # Right single quote
+        '\u201c': '"',  # Left double quote
+        '\u201d': '"',  # Right double quote
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
 
-class PDF(FPDF):
-    def header(self):
-        pass
-
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('DejaVu', '', 8)
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
-
-# Add Unicode font
-pdf = PDF()
-pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)  # Download and provide the TTF file
-pdf.set_font('DejaVu', '', 12)
+def create_download_pdf(name, email, phone, linkedin, summary, projects, experiences, education, skills, certifications):
+    pdf = PDF()
+    pdf.add_page()
+    
+    # Set font
+    pdf.set_font('Arial', 'B', 16)
+    
+    # Name
+    pdf.cell(0, 10, sanitize_text(name), ln=True, align='L')
+    
+    # Contact Info
+    pdf.set_font('Arial', '', 10)
+    contact_info = f"{sanitize_text(email)} | {sanitize_text(phone)} | {sanitize_text(linkedin)}"
+    pdf.cell(0, 10, sanitize_text(contact_info), ln=True, align='L')
+    
+    # Professional Summary
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, 'PROFESSIONAL SUMMARY', ln=True)
+    pdf.set_font('Arial', '', 10)
+    
+    # Handle multi-line summary with text wrapping
+    wrapped_summary = textwrap.fill(sanitize_text(summary), width=95)
+    for line in wrapped_summary.split('\n'):
+        pdf.cell(0, 5, line, ln=True)
+    pdf.ln(5)
+    
+    # Repeat the `sanitize_text` function for other text inputs in the function.
+    # Example:
+    # projects, experiences, education, skills, certifications
+    
+    # Return PDF as bytes
+    return pdf.output(dest='S').encode('latin-1')
 
 
 def create_download_pdf(name, email, phone, linkedin, summary, projects, experiences, education, skills, certifications):

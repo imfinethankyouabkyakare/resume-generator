@@ -4,14 +4,22 @@ from fpdf import FPDF
 import io
 import textwrap
 
+from fpdf import FPDF
+
 class PDF(FPDF):
     def header(self):
         pass
 
     def footer(self):
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
+        self.set_font('DejaVu', '', 8)
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+# Add Unicode font
+pdf = PDF()
+pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)  # Download and provide the TTF file
+pdf.set_font('DejaVu', '', 12)
+
 
 def create_download_pdf(name, email, phone, linkedin, summary, projects, experiences, education, skills, certifications):
     pdf = PDF()

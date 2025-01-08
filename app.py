@@ -1,5 +1,117 @@
 import streamlit as st
 import datetime
+from fpdf import FPDF
+import io
+import textwrap
+
+class PDF(FPDF):
+    def header(self):
+        pass
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+
+def create_download_pdf(name, email, phone, linkedin, summary, projects, experiences, education, skills, certifications):
+    pdf = PDF()
+    pdf.add_page()
+    
+    # Set font
+    pdf.set_font('Arial', 'B', 16)
+    
+    # Name
+    pdf.cell(0, 10, name, ln=True, align='L')
+    
+    # Contact Info
+    pdf.set_font('Arial', '', 10)
+    contact_info = f"{email} | {phone} | {linkedin}"
+    pdf.cell(0, 10, contact_info, ln=True, align='L')
+    
+    # Professional Summary
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, 'PROFESSIONAL SUMMARY', ln=True)
+    pdf.set_font('Arial', '', 10)
+    
+    # Handle multi-line summary with text wrapping
+    wrapped_summary = textwrap.fill(summary, width=95)
+    for line in wrapped_summary.split('\n'):
+        pdf.cell(0, 5, line, ln=True)
+    pdf.ln(5)
+    
+    # Projects
+    if projects:
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, 'PROJECTS', ln=True)
+        pdf.set_font('Arial', '', 10)
+        
+        for project in projects:
+            pdf.set_font('Arial', 'B', 10)
+            pdf.cell(0, 5, f"{project['name']} ({project['duration']})", ln=True)
+            pdf.set_font('Arial', '', 10)
+            for point in project['points']:
+                if point.strip():
+                    pdf.cell(10)  # Indent
+                    wrapped_point = textwrap.fill(point.strip(), width=85)
+                    for line in wrapped_point.split('\n'):
+                        pdf.cell(0, 5, f"• {line}", ln=True)
+            pdf.ln(2)
+    
+    # Experience
+    if experiences:
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, 'EXPERIENCE', ln=True)
+        pdf.set_font('Arial', '', 10)
+        
+        for exp in experiences:
+            pdf.set_font('Arial', 'B', 10)
+            pdf.cell(0, 5, f"{exp['company']} ({exp['duration']})", ln=True)
+            pdf.set_font('Arial', '', 10)
+            for point in exp['points']:
+                if point.strip():
+                    pdf.cell(10)  # Indent
+                    wrapped_point = textwrap.fill(point.strip(), width=85)
+                    for line in wrapped_point.split('\n'):
+                        pdf.cell(0, 5, f"• {line}", ln=True)
+            pdf.ln(2)
+    
+    # Education
+    if education:
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, 'EDUCATION', ln=True)
+        pdf.set_font('Arial', '', 10)
+        
+        for edu in education:
+            pdf.set_font('Arial', 'B', 10)
+            pdf.cell(0, 5, f"{edu['institution']} ({edu['duration']})", ln=True)
+            pdf.set_font('Arial', '', 10)
+            pdf.cell(0, 5, f"{edu['degree']} - {edu['grade']}", ln=True)
+        pdf.ln(2)
+    
+    # Skills
+    if skills:
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, 'SKILLS', ln=True)
+        pdf.set_font('Arial', '', 10)
+        # Wrap skills text
+        skills_text = ", ".join(skill.strip() for skill in skills if skill.strip())
+        wrapped_skills = textwrap.fill(skills_text, width=95)
+        for line in wrapped_skills.split('\n'):
+            pdf.cell(0, 5, line, ln=True)
+        pdf.ln(2)
+    
+    # Certifications
+    if certifications:
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, 'CERTIFICATION', ln=True)
+        pdf.set_font('Arial', '', 10)
+        for cert in certifications:
+            if cert.strip():
+                pdf.cell(10)  # Indent
+                pdf.cell(0, 5, f"• {cert.strip()}", ln=True)
+    
+    # Return PDF as bytes
+    return pdf.output(dest='S').encode('latin-1')
 
 def main():
     st.title("ATS-Friendly Resume Generator")
@@ -91,11 +203,27 @@ def main():
 
     # Generate Resume
     if st.button("Generate Resume"):
+        # Preview the resume
         generate_resume(
             name, email, phone, linkedin, summary,
             projects, experiences, education,
             skills.split(',') if skills else [],
             certifications.split('\n') if certifications else []
+        )
+        
+        # Create download button for PDF
+        pdf_bytes = create_download_pdf(
+            name, email, phone, linkedin, summary,
+            projects, experiences, education,
+            skills.split(',') if skills else [],
+            certifications.split('\n') if certifications else []
+        )
+        
+        st.download_button(
+            label="Download Resume as PDF",
+            data=pdf_bytes,
+            file_name=f"{name.lower().replace(' ', '_')}_resume.pdf",
+            mime="application/pdf"
         )
 
 def generate_resume(name, email, phone, linkedin, summary, projects, experiences, education, skills, certifications):
